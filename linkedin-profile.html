@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make Me! - LinkedIn Profile Engine</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070b14;--surface:#0d1424;--card:#111d30;--card2:#162236;
+  --border:#1e3050;--border2:#253d61;
+  --amber:#f59e0b;--amber-h:#fbbf24;--amber-d:rgba(245,158,11,.12);--amber-d2:rgba(245,158,11,.06);
+  --blue:#3b82f6;--blue-d:rgba(59,130,246,.12);
+  --green:#10b981;--green-d:rgba(16,185,129,.12);
+  --red:#ef4444;--red-d:rgba(239,68,68,.12);
+  --purple:#a78bfa;--purple-d:rgba(167,139,250,.12);
+  --text:#e2e8f0;--text-m:#94a3b8;--text-d:#4b6280;
+  --mono:'Cascadia Mono','Consolas',monospace;--sans:'Segoe UI',Arial,sans-serif;
+  --r:8px;--rl:12px;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:58px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{position:relative;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;outline:none}
+.logo-icon{width:30px;height:30px;background:var(--amber);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.logo-sub{color:var(--text-d);font-weight:400;font-size:12px;margin-left:2px}
+.engine-menu{position:absolute;top:100%;left:0;width:250px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 18px 45px rgba(0,0,0,.35);padding:8px;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-4px);transition:opacity .15s,transform .15s,visibility .15s;z-index:200}
+.logo:hover .engine-menu,.logo:focus-within .engine-menu{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
+.engine-menu a{display:block;padding:8px 10px;border-radius:6px;color:var(--text-m);text-decoration:none;font-size:12px;line-height:1.3}
+.engine-menu a:hover,.engine-menu a:focus{background:var(--surface);color:var(--amber);outline:none}
+.engine-menu .current{color:var(--text);background:var(--amber-d)}
+.api-row{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.api-field{display:flex;flex-direction:column;gap:3px}
+.api-lbl{font-size:9px;color:var(--text-d);text-transform:uppercase;letter-spacing:.08em}
+.api-dot{width:8px;height:8px;border-radius:50%;background:var(--text-d);flex-shrink:0;transition:background .3s}
+.api-dot.ok{background:var(--green)}.api-dot.bad{background:var(--red)}
+.ai-sel,.model-in,.api-in{background:var(--card);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:var(--r);font-size:12px;height:34px;outline:none;transition:border-color .2s}
+.ai-sel{width:132px;background-color:#101a2c;color:#fff;border-color:var(--amber);font-weight:500}.model-in{width:178px;font-family:var(--mono)}.api-in{width:238px;font-family:var(--mono)}
+.ai-sel:focus,.model-in:focus,.api-in:focus{border-color:var(--amber)}
+.api-in::placeholder,.model-in::placeholder{color:var(--text-d)}
+.tabs{display:flex;gap:2px;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.tb{padding:11px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-m);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.tb:hover{color:var(--text)}.tb.on{color:var(--amber);border-bottom-color:var(--amber)}
+.main{padding:22px 24px;max-width:1280px;margin:0 auto}
+.panel{display:none}.panel.on{display:block}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+.byo-note{background:var(--amber-d2);border:1px solid rgba(245,158,11,.2);border-radius:var(--rl);padding:14px 16px;margin-bottom:16px;color:var(--text-m);font-size:12px;line-height:1.7}
+.byo-note strong{color:var(--amber);font-size:13px}
+.safe-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 18px;margin-top:10px}
+.safe-list div{position:relative;padding-left:15px}.safe-list div::before{content:"";position:absolute;left:0;top:.72em;width:5px;height:5px;border-radius:50%;background:var(--amber)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:20px;margin-bottom:16px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.ct{font-size:11px;font-weight:600;color:var(--text-d);text-transform:uppercase;letter-spacing:.09em}
+.lbl{display:block;font-size:11px;font-weight:500;color:var(--text-m);margin-bottom:5px;letter-spacing:.04em}
+.fg{margin-bottom:14px}
+input[type=text],input[type=url],input[type=password],textarea,select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:var(--r);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:var(--amber)}
+input::placeholder,textarea::placeholder{color:var(--text-d)}
+select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%234b6280' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+select option{background:var(--card)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-p{background:var(--amber);color:#000}.btn-p:hover:not(:disabled){background:var(--amber-h)}
+.btn-o{background:transparent;color:var(--text);border:1px solid var(--border2)}.btn-o:hover:not(:disabled){background:var(--card2);border-color:var(--amber);color:var(--amber)}
+.btn-grn{background:var(--green-d);color:#6ee7b7;border:1px solid rgba(16,185,129,.2)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.alert{padding:9px 13px;border-radius:var(--r);font-size:12px;margin-bottom:14px;display:flex;align-items:center;gap:8px;animation:fi .3s ease}
+.ai{background:var(--blue-d);border:1px solid rgba(59,130,246,.2);color:#93c5fd}.as{background:var(--green-d);border:1px solid rgba(16,185,129,.2);color:#6ee7b7}.ae{background:var(--red-d);border:1px solid rgba(239,68,68,.2);color:#fca5a5}.aw{background:var(--amber-d);border:1px solid rgba(245,158,11,.2);color:#fcd34d}
+@keyframes fi{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.score{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+.score-n{font-size:24px;font-weight:700;font-family:var(--mono);color:var(--amber)}
+.score-l{font-size:10px;color:var(--text-d);text-transform:uppercase;letter-spacing:.08em}
+.score-note{background:var(--blue-d);border:1px solid rgba(59,130,246,.2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;color:#bfdbfe;font-size:12px;line-height:1.7}
+.strength-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:var(--amber-d);border:1px solid rgba(245,158,11,.22);color:var(--amber);font-size:11px;font-weight:600}
+.action-note{background:var(--amber-d2);border:1px solid rgba(245,158,11,.16);border-radius:var(--r);padding:13px 14px;color:var(--text-m);font-size:12px;line-height:1.7}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--mono)}
+.c-grn{background:var(--green-d);color:#6ee7b7;border:1px solid rgba(16,185,129,.2)}.c-red{background:var(--red-d);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}.c-blu{background:var(--blue-d);color:#93c5fd;border:1px solid rgba(59,130,246,.2)}.c-amb{background:var(--amber-d);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.out-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;white-space:pre-wrap;font-size:13px;color:var(--text-m);line-height:1.75}
+.out-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--amber);margin-bottom:6px}
+.empty{padding:34px 18px;text-align:center;color:var(--text-d);font-size:13px}
+@media(max-width:700px){.safe-list,.score-grid{grid-template-columns:1fr}.hdr{height:auto;min-height:58px;align-items:flex-start;padding:12px 16px;gap:12px}.ai-sel,.model-in,.api-in{width:220px}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo" tabindex="0" aria-label="Make Me engine navigation">
+    <div class="logo-icon">in</div>
+    Make Me!
+    <span class="logo-sub">/ LinkedIn Profile Engine</span>
+    <nav class="engine-menu" aria-label="Career Suite engines">
+      <a href="../index.html">Career Suite Launcher</a>
+      <a href="resume-positioning.html">Resume Positioning Engine</a>
+      <a href="job-application.html">Job Application Engine</a>
+      <a href="linkedin-profile.html" class="current">LinkedIn Profile Engine</a>
+      <a href="template-engine.html">Template Engine</a>
+    </nav>
+  </div>
+  <div class="api-row">
+    <div class="api-dot" id="apiDot"></div>
+    <div class="api-field">
+      <span class="api-lbl">Provider</span>
+      <select class="ai-sel" id="providerSel" title="Choose your AI provider">
+        <option value="openrouter">OpenRouter</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="gemini">Gemini</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="api-field">
+      <span class="api-lbl">Model</span>
+      <input type="text" class="model-in" id="modelIn" placeholder="Model" autocomplete="off" title="Model name for the selected provider">
+    </div>
+    <div class="api-field">
+      <span class="api-lbl">API Key</span>
+      <input type="password" class="api-in" id="apiIn" placeholder="Provider API key - not saved" autocomplete="off">
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tb on" onclick="gotoTab('intake')" id="tb-intake">Intake</button>
+  <button class="tb" onclick="gotoTab('diagnosis')" id="tb-diagnosis">Diagnosis</button>
+  <button class="tb" onclick="gotoTab('rewrite')" id="tb-rewrite">Rewrite Package</button>
+  <button class="tb" onclick="gotoTab('search')" id="tb-search">Search Strategy</button>
+  <button class="tb" onclick="gotoTab('saved')" id="tb-saved">Saved</button>
+</div>
+
+<div class="main">
+  <div class="byo-note">
+    <strong>Browser prototype notice:</strong> Make Me! uses your own AI provider key directly from this page. The key is not saved in localStorage and is only used to send your prompts to the provider you choose while this tab is open.
+    <div class="safe-list">
+      <div>Use a personal key, not an employer or organization key.</div>
+      <div>Set low usage limits in your provider account.</div>
+      <div>Paste profile text directly; this engine does not log in to LinkedIn.</div>
+      <div>Generated copy is saved locally in your browser only.</div>
+      <div>This page avoids third-party scripts and remote fonts.</div>
+      <div>Refresh the page when you are done to clear the key from memory.</div>
+    </div>
+  </div>
+  <div id="ga"></div>
+
+  <div class="panel on" id="panel-intake">
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><span class="ct">Source Material</span></div>
+        <div class="fg"><label class="lbl">Resume / Background *</label><textarea id="resumeTxt" rows="9" placeholder="Paste resume, work history, achievements, certifications, education, and tools."></textarea></div>
+        <div class="fg"><label class="lbl">Current LinkedIn Profile</label><textarea id="profileTxt" rows="8" placeholder="Paste current headline, About, Experience, Skills, Featured, and any notes. Leave blank if starting fresh."></textarea></div>
+        <div class="fg"><label class="lbl">Target Job Description / Role Direction</label><textarea id="targetTxt" rows="6" placeholder="Paste a target job description or describe the role direction."></textarea></div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Positioning Inputs</span></div>
+        <div class="fg"><label class="lbl">Target Role Titles *</label><input id="roleTitles" type="text" placeholder="e.g. Product Manager, Operations Director, Healthcare Administrator"></div>
+        <div class="fg"><label class="lbl">Target Industries</label><input id="industries" type="text" placeholder="e.g. FinTech, Healthcare, Higher Education, Consulting"></div>
+        <div class="fg"><label class="lbl">Specialties / Problems You Solve</label><input id="specialties" type="text" placeholder="e.g. turnaround programs, customer growth, compliance, platform migration"></div>
+        <div class="fg"><label class="lbl">Search Mode</label><select id="searchMode"><option>Active job search</option><option>Passive / recruiter-visible</option><option>Stealth / private</option><option>Consulting / fractional</option><option>Open to multiple paths</option></select></div>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn btn-p" id="diagnoseBtn" onclick="runDiagnosis()">Diagnose Profile</button>
+          <button class="btn btn-o" onclick="prefillFromProfile()">Use Make Me Profile</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-diagnosis">
+    <div id="diagWrap" class="empty">Run diagnosis to score recruiter searchability, credibility, keyword alignment, proof, and profile completeness.</div>
+  </div>
+
+  <div class="panel" id="panel-rewrite">
+    <div class="card">
+      <div class="ch"><span class="ct">Generated LinkedIn Package</span><button class="btn btn-grn" onclick="downloadPackage()">Download .txt</button></div>
+      <div id="packageWrap" class="empty">Generate the rewrite package after diagnosis.</div>
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn btn-p" id="rewriteBtn" onclick="generatePackage()">Generate Rewrite Package</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-search">
+    <div id="searchWrap" class="empty">Recruiter search strategy appears after the rewrite package is generated.</div>
+  </div>
+
+  <div class="panel" id="panel-saved">
+    <div class="card">
+      <div class="ch"><span class="ct">Saved LinkedIn Packages</span></div>
+      <div id="savedWrap" class="empty">No saved LinkedIn packages yet.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY='makeme_data';
+const STORE_DEFAULTS={version:'1.0',profile:null,applications:[],resumes:[],interviews:[],negotiations:[],linkedin:[],outreach:[]};
+function getStore(){try{const r=localStorage.getItem(STORE_KEY);return r?{...STORE_DEFAULTS,...JSON.parse(r)}:{...STORE_DEFAULTS};}catch(e){return{...STORE_DEFAULTS};}}
+function saveStore(s){try{localStorage.setItem(STORE_KEY,JSON.stringify(s));return true;}catch(e){return false;}}
+function saveLinkedInPackage(pkg){const s=getStore();s.linkedin=s.linkedin||[];s.linkedin.unshift({...pkg,savedAt:new Date().toISOString()});if(s.linkedin.length>20)s.linkedin=s.linkedin.slice(0,20);return saveStore(s);}
+function getLinkedInPackages(){return getStore().linkedin||[];}
+
+let KEY='';
+let selectedProvider='openrouter';
+const AI_MODELS={openrouter:'openai/gpt-4.1-mini',openai:'gpt-4.1-mini',anthropic:'claude-sonnet-4-20250514',gemini:'gemini-1.5-flash',custom:'gpt-4.1-mini'};
+let diagnosis=null;
+let generatedPackage=null;
+let isGeneratingPackage=false;
+
+document.getElementById('apiIn').addEventListener('input',function(){KEY=this.value.trim();updateApiDot();});
+document.getElementById('providerSel').addEventListener('change',function(){selectedProvider=this.value;document.getElementById('modelIn').value=AI_MODELS[selectedProvider]||'';updateApiDot();});
+document.getElementById('modelIn').value=AI_MODELS[selectedProvider];
+document.getElementById('modelIn').addEventListener('input',function(){AI_MODELS[selectedProvider]=this.value.trim();});
+renderSaved();
+
+function gotoTab(t){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('panel-'+t).classList.add('on');
+  document.getElementById('tb-'+t).classList.add('on');
+  if(t==='saved')renderSaved();
+}
+function flash(msg,type='ai',cid='ga'){const c=document.getElementById(cid);if(!c)return;const cls={ai:'ai',as:'as',ae:'ae',aw:'aw'}[type]||'ai';c.innerHTML=`<div class="alert ${cls}"><span>${{ai:'i',as:'v',ae:'x',aw:'!'}[type]||'i'}</span>${esc(msg)}</div>`;setTimeout(()=>{if(c.innerHTML)c.innerHTML='';},5000);}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function getAiModel(){return document.getElementById('modelIn')?.value.trim()||AI_MODELS[selectedProvider]||'';}
+function updateApiDot(){const d=document.getElementById('apiDot');if(!d)return;const ok=KEY.length>8&&!!getAiModel();d.className='api-dot'+(ok?' ok':KEY.length?' bad':'');}
+function requireKey(){if(!KEY){flash('Paste your selected provider API key in the header first.','ae');return false;}if(!getAiModel()){flash('Enter a model name for the selected AI provider.','ae');return false;}return true;}
+function val(id){return document.getElementById(id).value.trim();}
+function stripFence(s){return String(s||'').replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();}
+function parseJson(raw){const clean=stripFence(raw);const s=clean.indexOf('{'),e=clean.lastIndexOf('}')+1;if(s<0||e<1)throw new Error('Model did not return JSON');return JSON.parse(clean.slice(s,e));}
+
+function prefillFromProfile(){
+  const p=getStore().profile;
+  if(!p){flash('No Make Me profile found yet. Add source material manually.','aw');return;}
+  const parts=[p.name,p.currentTitle,p.years,p.domain,p.education,p.experience,p.tools,p.methods,p.compliance,p.certs,p.strengths].filter(Boolean).join('\n\n');
+  document.getElementById('resumeTxt').value=parts;
+  document.getElementById('roleTitles').value=p.currentTitle||'';
+  document.getElementById('industries').value=p.domain||'';
+  flash('Profile pulled from shared Make Me data.','as');
+}
+
+async function runDiagnosis(){
+  if(!requireKey())return;
+  if(!val('resumeTxt')||!val('roleTitles')){flash('Resume/background and target role titles are required.','aw');return;}
+  const btn=document.getElementById('diagnoseBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Diagnosing...';
+  try{
+    const raw=await callAI(buildDiagnosisPrompt(),'You are an expert LinkedIn profile strategist. Return raw JSON only.',{maxTokens:3500});
+    diagnosis=parseJson(raw);
+    renderDiagnosis();
+    gotoTab('diagnosis');
+    flash('LinkedIn diagnosis complete.','as');
+  }catch(e){flash('Diagnosis failed: '+e.message,'ae');}
+  finally{btn.disabled=false;btn.textContent='Diagnose Profile';}
+}
+
+function buildDiagnosisPrompt(){
+  return `Diagnose this LinkedIn profile for recruiter searchability and human credibility.
+
+RESUME / BACKGROUND:
+${val('resumeTxt')}
+
+CURRENT LINKEDIN PROFILE:
+${val('profileTxt')||'(No current profile provided)'}
+
+TARGET JOB DESCRIPTION / ROLE DIRECTION:
+${val('targetTxt')||'(No job description provided)'}
+
+TARGET ROLE TITLES:
+${val('roleTitles')}
+
+TARGET INDUSTRIES:
+${val('industries')||'(Not specified)'}
+
+SPECIALTIES / PROBLEMS:
+${val('specialties')||'(Not specified)'}
+
+SEARCH MODE:
+${val('searchMode')}
+
+Scoring rubric:
+- Every score is 1-10.
+- 1-3 = weak / hard for recruiters to find or trust.
+- 4-6 = workable but under-optimized.
+- 7-8 = strong and recruiter-ready.
+- 9-10 = excellent compared with high-performing LinkedIn profiles for the target roles and industries.
+- Score against the target role titles, target industries, supplied resume/profile facts, recruiter search patterns, and common high-quality LinkedIn profile practices.
+
+Return ONLY valid JSON with this structure:
+{"scores":{"headline":0,"about":0,"searchability":0,"proof":0,"skills":0,"featured":0,"trust":0,"resume_consistency":0,"overall":0},"strength_label":"","benchmark_explanation":"","summary":"","missing_keywords":[],"overused_or_diluting_keywords":[],"profile_gaps":[],"trust_risks":[],"first_screen_recommendation":"","target_search_terms":[],"open_to_work_titles":[]}`;
+}
+
+function renderDiagnosis(){
+  const s=diagnosis.scores||{};
+  document.getElementById('diagWrap').innerHTML=`<div class="card"><div class="ch"><span class="ct">Profile Diagnosis</span><span class="strength-pill">${esc(diagnosis.strength_label||strengthLabel(s.overall))}</span></div>
+    <div class="score-note"><strong>Score basis:</strong> Each score is out of 10. This diagnosis is benchmarked against the target role titles, target industries, your supplied resume/profile facts, recruiter search patterns, and common high-quality LinkedIn profile practices. It is not a generic popularity score.</div>
+    <div class="score-grid">${['overall','headline','about','searchability','proof','skills','featured','trust','resume_consistency'].map(k=>`<div class="score"><div class="score-n">${Number(s[k]||0)}</div><div class="score-l">${esc(k.replace(/_/g,' '))}</div></div>`).join('')}</div>
+    <div class="out-block" style="margin-top:14px"><div class="out-title">Benchmark</div>${esc(diagnosis.benchmark_explanation||'Compared against recruiter-searchable, credibility-heavy profiles for the target direction you provided.')}</div>
+    <div class="out-block">${esc(diagnosis.summary||'')}</div>
+    <div class="action-note"><strong>Next step is below.</strong> Click Generate Rewrite Package after reviewing the diagnosis. Generation can take 30-90 seconds depending on provider/model speed and profile length. After you click it, Make Me! will move you to the Rewrite Package tab and show progress there.</div>
+    <div class="btn-row" style="margin-top:12px"><button class="btn btn-p rewrite-trigger" onclick="generatePackage()">Generate Rewrite Package</button></div></div>
+    <div class="g2">
+      ${listCard('Missing Recruiter Keywords',diagnosis.missing_keywords,'c-red')}
+      ${listCard('Target Search Terms',diagnosis.target_search_terms,'c-blu')}
+      ${listCard('Profile Gaps',diagnosis.profile_gaps,'c-amb')}
+      ${listCard('Trust Risks',diagnosis.trust_risks,'c-red')}
+    </div>
+    <div class="card"><div class="ch"><span class="ct">First Screen Recommendation</span></div><div class="out-block">${esc(diagnosis.first_screen_recommendation||'')}</div></div>
+    <div class="card"><div class="ch"><span class="ct">Open To Work Titles</span></div><div class="chips">${(diagnosis.open_to_work_titles||[]).map(x=>`<span class="chip c-grn">${esc(x)}</span>`).join('')}</div></div>`;
+}
+function strengthLabel(score){
+  const n=Number(score||0);
+  if(n>=9)return 'Excellent: 9-10 / 10';
+  if(n>=7)return 'Strong: 7-8 / 10';
+  if(n>=4)return 'Workable: 4-6 / 10';
+  return 'Weak: 1-3 / 10';
+}
+function listCard(title,items,cls){return `<div class="card"><div class="ch"><span class="ct">${esc(title)}</span></div><div class="chips">${(items||[]).map(x=>`<span class="chip ${cls}">${esc(x)}</span>`).join('')||'<span style="color:var(--text-d)">None yet.</span>'}</div></div>`;}
+
+async function generatePackage(){
+  if(!requireKey())return;
+  if(!diagnosis){flash('Run diagnosis first.','aw');gotoTab('intake');return;}
+  if(isGeneratingPackage){flash('Rewrite package is already generating. This can take 30-90 seconds.','aw');gotoTab('rewrite');return;}
+  isGeneratingPackage=true;
+  gotoTab('rewrite');
+  document.getElementById('packageWrap').className='';
+  document.getElementById('packageWrap').innerHTML='<div class="out-block"><span class="spin"></span> Generating your LinkedIn rewrite package. This can take 30-90 seconds depending on provider/model speed and profile length. Please wait.</div>';
+  setRewriteButtons(true);
+  try{
+    const raw=await callAI(buildRewritePrompt(),'You are an expert LinkedIn profile strategist. Return raw JSON only.',{maxTokens:5200});
+    generatedPackage=parseJson(raw);
+    saveLinkedInPackage({roleTitles:val('roleTitles'),industries:val('industries'),mode:val('searchMode'),diagnosis,package:generatedPackage});
+    renderPackage();
+    renderSearch();
+    renderSaved();
+    flash('LinkedIn rewrite package generated and saved locally.','as');
+  }catch(e){flash('Rewrite failed: '+e.message,'ae');}
+  finally{isGeneratingPackage=false;setRewriteButtons(false);}
+}
+function setRewriteButtons(disabled){
+  document.querySelectorAll('.rewrite-trigger,#rewriteBtn').forEach(btn=>{
+    btn.disabled=disabled;
+    btn.innerHTML=disabled?'<span class="spin"></span> Generating...':'Generate Rewrite Package';
+  });
+}
+
+function buildRewritePrompt(){
+  return `Create a complete LinkedIn profile rewrite and recruiter search strategy.
+
+Use this diagnosis:
+${JSON.stringify(diagnosis)}
+
+RESUME / BACKGROUND:
+${val('resumeTxt')}
+
+CURRENT LINKEDIN PROFILE:
+${val('profileTxt')||'(No current profile provided)'}
+
+TARGET:
+Roles: ${val('roleTitles')}
+Industries: ${val('industries')||'(Not specified)'}
+Specialties: ${val('specialties')||'(Not specified)'}
+Search mode: ${val('searchMode')}
+Target job direction: ${val('targetTxt')||'(Not specified)'}
+
+Rules:
+- Do not invent credentials, employers, dates, degrees, metrics, or achievements.
+- Optimize for both recruiter search and a human 10-second credibility scan.
+- Use controlled keyword variation without sounding spammy.
+- Keep the About section human, senior, and not desperate.
+- Generate recommendation request scripts that are easy to send.
+
+Return ONLY valid JSON:
+{"headline_options":[],"selected_headline":"","about_full":"","about_short":"","problems_i_solve":[],"experience_rewrite_guidance":[],"skills":{"pinned":[],"full_stack":[],"remove_or_deprioritize":[]},"featured_recommendations":[{"title":"","description":""}],"open_to_work_titles":[],"banner_text_options":[],"custom_url_suggestion":"","recommendation_requests":[],"services_page":{"recommended":false,"positioning":"","services":[]},"search_strategy":{"primary_searches":[],"secondary_searches":[],"missing_terms_to_add":[],"keyword_placement_plan":[]},"consistency_check":[],"final_polish_notes":[]}`;
+}
+
+function renderPackage(){
+  const p=generatedPackage;
+  document.getElementById('packageWrap').innerHTML=[
+    block('Selected Headline',p.selected_headline),
+    block('Headline Options',numbered(p.headline_options)),
+    block('Full About Section',p.about_full),
+    block('Short About Section',p.about_short),
+    block('Problems I Solve',bullets(p.problems_i_solve)),
+    block('Experience Rewrite Guidance',bullets(p.experience_rewrite_guidance)),
+    block('Pinned Skills',inlineList(p.skills?.pinned)),
+    block('Full Skill Stack',inlineList(p.skills?.full_stack)),
+    block('Featured Strategy',blocks(p.featured_recommendations)),
+    block('Banner Text Options',bullets(p.banner_text_options)),
+    block('Custom URL Suggestion',p.custom_url_suggestion),
+    block('Recommendation Requests',numbered(p.recommendation_requests)),
+    block('Services Page',p.services_page?.recommended?`${formatItem(p.services_page.positioning)}\n\nServices: ${inlineList(p.services_page.services)}`:'Not recommended for this positioning.'),
+    block('Consistency Check',bullets(p.consistency_check)),
+    block('Final Polish Notes',bullets(p.final_polish_notes))
+  ].join('');
+}
+function block(title,text){return `<div class="out-block"><div class="out-title">${esc(title)}</div>${esc(text||'')}</div>`;}
+function formatItem(item){
+  if(item==null)return '';
+  if(typeof item==='string'||typeof item==='number'||typeof item==='boolean')return String(item);
+  if(Array.isArray(item))return item.map(formatItem).filter(Boolean).join(', ');
+  if(typeof item==='object'){
+    const preferred=['title','headline','label','message','request','script','description','text','body','positioning'];
+    const lines=[];
+    preferred.forEach(k=>{if(item[k])lines.push(formatItem(item[k]));});
+    Object.keys(item).filter(k=>!preferred.includes(k)&&item[k]).forEach(k=>lines.push(`${k.replace(/_/g,' ')}: ${formatItem(item[k])}`));
+    return lines.join('\n');
+  }
+  return String(item);
+}
+function numbered(items){return (items||[]).map((x,i)=>`${i+1}. ${formatItem(x)}`).join('\n\n');}
+function bullets(items){return (items||[]).map(x=>'- '+formatItem(x)).join('\n');}
+function inlineList(items){return (items||[]).map(formatItem).filter(Boolean).join(', ');}
+function blocks(items){return (items||[]).map(formatItem).filter(Boolean).join('\n\n');}
+
+function renderSearch(){
+  const s=generatedPackage?.search_strategy||{};
+  document.getElementById('searchWrap').innerHTML=`<div class="g2">
+    ${chipCard('Primary Recruiter Searches',s.primary_searches,'c-grn')}
+    ${chipCard('Secondary Searches',s.secondary_searches,'c-blu')}
+    ${chipCard('Missing Terms To Add',s.missing_terms_to_add,'c-red')}
+    <div class="card"><div class="ch"><span class="ct">Keyword Placement Plan</span></div><div class="out-block">${esc((s.keyword_placement_plan||[]).map(x=>'- '+x).join('\n'))}</div></div>
+  </div>`;
+}
+function chipCard(title,items,cls){return `<div class="card"><div class="ch"><span class="ct">${esc(title)}</span></div><div class="chips">${(items||[]).map(x=>`<span class="chip ${cls}">${esc(x)}</span>`).join('')}</div></div>`;}
+
+function renderSaved(){
+  const items=getLinkedInPackages();
+  const w=document.getElementById('savedWrap');
+  if(!w)return;
+  if(!items.length){w.className='empty';w.textContent='No saved LinkedIn packages yet.';return;}
+  w.className='';
+  w.innerHTML=items.slice(0,10).map((x,i)=>`<div class="out-block"><div class="out-title">${esc(x.roleTitles||'LinkedIn Package')} - ${esc(new Date(x.savedAt).toLocaleDateString())}</div><button class="btn btn-o" onclick="loadSaved(${i})">Load</button></div>`).join('');
+}
+function loadSaved(i){
+  const item=getLinkedInPackages()[i];if(!item)return;
+  diagnosis=item.diagnosis;generatedPackage=item.package;
+  renderDiagnosis();renderPackage();renderSearch();gotoTab('rewrite');
+}
+
+function packageText(){
+  if(!generatedPackage)return '';
+  const div=document.createElement('div');
+  div.innerHTML=document.getElementById('packageWrap').innerHTML;
+  return div.textContent.replace(/\n{3,}/g,'\n\n').trim();
+}
+function downloadPackage(){
+  if(!generatedPackage){flash('Generate a LinkedIn package first.','aw');return;}
+  const blob=new Blob([packageText()],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='MakeMe_LinkedIn_Profile_Package.txt';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function callAI(prompt,system='',opts={}){
+  if(selectedProvider==='anthropic')return callAnthropic(prompt,system,opts);
+  if(selectedProvider==='gemini')return callGemini(prompt,system,opts);
+  return callOpenAICompatible(prompt,system,opts);
+}
+function apiError(r,data){const msg=data?.error?.message||data?.error?.status||data?.error?.code||'API error';return new Error(`${msg} (${r.status})`);}
+async function callAnthropic(prompt,system='',opts={}){
+  const body={model:getAiModel(),max_tokens:opts.maxTokens||4096,messages:[{role:'user',content:prompt}]};
+  if(system)body.system=system;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  if(!r.ok){let e={};try{e=await r.json();}catch{}throw apiError(r,e);}
+  const d=await r.json();return d.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+async function callOpenAICompatible(prompt,system='',opts={}){
+  const endpoint=selectedProvider==='custom'?(window.prompt('Enter OpenAI-compatible chat completions endpoint:','https://api.openai.com/v1/chat/completions')||'https://api.openai.com/v1/chat/completions'):(selectedProvider==='openrouter'?'https://openrouter.ai/api/v1/chat/completions':'https://api.openai.com/v1/chat/completions');
+  const messages=[];if(system)messages.push({role:'system',content:system});messages.push({role:'user',content:prompt});
+  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},body:JSON.stringify({model:getAiModel(),messages,max_tokens:opts.maxTokens||4096,temperature:.2})});
+  if(!r.ok){let e={};try{e=await r.json();}catch{}throw apiError(r,e);}
+  const d=await r.json();return d.choices?.[0]?.message?.content||'';
+}
+async function callGemini(prompt,system='',opts={}){
+  const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(getAiModel())+':generateContent?key='+encodeURIComponent(KEY);
+  const body={contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:opts.maxTokens||4096,temperature:.2}};
+  if(system)body.systemInstruction={parts:[{text:system}]};
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){let e={};try{e=await r.json();}catch{}throw apiError(r,e);}
+  const d=await r.json();return (d.candidates||[]).map(c=>c.content?.parts?.map(p=>p.text||'').join('\n')||'').join('\n');
+}
+</script>
+</body>
+</html>
